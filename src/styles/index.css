@@ -1,0 +1,221 @@
+@import "tailwindcss";
+
+@theme {
+  --color-accent: #00d4ff;
+  --color-bg-primary: #0a0a1a;
+  --color-bg-secondary: #12122a;
+  --color-bg-tertiary: #1a1a3e;
+  --color-text-primary: #e0e0e0;
+  --color-text-secondary: #8888aa;
+  --color-error: #ff6b6b;
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+}
+
+:root {
+  --chat-font-size: 13px;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+#root {
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-bg-tertiary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+/* Markdown prose styling for assistant messages */
+.prose-holographic {
+  line-height: 1.6;
+}
+
+.prose-holographic p {
+  margin: 0.4em 0;
+}
+
+.prose-holographic p:first-child {
+  margin-top: 0;
+}
+
+.prose-holographic p:last-child {
+  margin-bottom: 0;
+}
+
+.prose-holographic strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.prose-holographic em {
+  font-style: italic;
+}
+
+.prose-holographic h1,
+.prose-holographic h2,
+.prose-holographic h3,
+.prose-holographic h4 {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  margin: 0.8em 0 0.4em;
+}
+
+.prose-holographic h1 {
+  font-size: 1.25em;
+}
+
+.prose-holographic h2 {
+  font-size: 1.125em;
+}
+
+.prose-holographic h3 {
+  font-size: 1em;
+}
+
+.prose-holographic ul,
+.prose-holographic ol {
+  margin: 0.4em 0;
+  padding-left: 1.5em;
+}
+
+.prose-holographic li {
+  margin: 0.15em 0;
+}
+
+.prose-holographic ul li {
+  list-style: disc;
+}
+
+.prose-holographic ol li {
+  list-style: decimal;
+}
+
+.prose-holographic a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose-holographic a:hover {
+  opacity: 0.8;
+}
+
+.prose-holographic blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 0.75em;
+  margin: 0.5em 0;
+  color: var(--color-text-secondary);
+}
+
+.prose-holographic hr {
+  border: none;
+  border-top: 1px solid var(--color-bg-tertiary);
+  margin: 0.75em 0;
+}
+
+/* Inline code */
+.prose-holographic code {
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  font-size: 0.9em;
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--color-accent);
+  padding: 0.15em 0.35em;
+  border-radius: 3px;
+}
+
+/* Code blocks */
+.prose-holographic pre {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-bg-tertiary);
+  border-radius: 6px;
+  padding: 0.75em;
+  margin: 0.5em 0;
+  overflow-x: auto;
+}
+
+.prose-holographic pre code {
+  background: none;
+  color: var(--color-text-primary);
+  padding: 0;
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+
+/* Tables */
+.prose-holographic table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5em 0;
+  font-size: 0.9em;
+}
+
+.prose-holographic th,
+.prose-holographic td {
+  border: 1px solid var(--color-bg-tertiary);
+  padding: 0.35em 0.6em;
+  text-align: left;
+}
+
+.prose-holographic th {
+  background: var(--color-bg-primary);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* Chat message font size (user-configurable via Ctrl+/Ctrl-) */
+.chat-message-text {
+  font-size: var(--chat-font-size);
+}
+
+/* High-contrast mode refinements */
+.high-contrast .prose-holographic code {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.high-contrast .prose-holographic pre {
+  border-color: #444;
+}
+
+.high-contrast ::-webkit-scrollbar-track {
+  background: #000;
+}
+
+.high-contrast ::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+.high-contrast ::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+/* Focus ring visibility (accessibility) */
+.high-contrast *:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
