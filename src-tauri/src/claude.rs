@@ -386,32 +386,38 @@ RULES:
 
     // Stream stdout line-by-line, collecting into full output.
     // Emit progress events so the frontend can show live status.
-    // 5-minute timeout — TINS generation analyzes full HTML source and writes
-    // a comprehensive spec; complex apps need more than 2 minutes.
+    //
+    // Activity-based timeout: instead of a fixed deadline, we reset a
+    // per-line timer every time output arrives. Claude can take as long as
+    // it needs for complex apps — we only kill the process if it goes
+    // silent for 90 seconds (stall detection). The initial wait is longer
+    // (3 minutes) to allow for the thinking/analysis phase before any
+    // output begins.
     let mut collected = String::new();
     let mut line_count: u32 = 0;
+
+    // How long to wait for the very first line (Claude is analyzing the HTML)
+    const INITIAL_WAIT: Duration = Duration::from_secs(180);
+    // How long to wait between subsequent lines before declaring a stall
+    const LINE_STALL: Duration = Duration::from_secs(90);
 
     if let Some(stdout) = child.stdout.take() {
         let reader = BufReader::new(stdout);
         let mut lines = reader.lines();
 
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(300);
+        let mut current_timeout = INITIAL_WAIT;
 
         loop {
-            let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
-            if remaining.is_zero() {
-                // Kill the child process on timeout
-                let _ = child.kill().await;
-                return Err("Claude timed out after 5 minutes".to_string());
-            }
-
-            match timeout(remaining, lines.next_line()).await {
+            match timeout(current_timeout, lines.next_line()).await {
                 Ok(Ok(Some(line))) => {
                     if !collected.is_empty() {
                         collected.push('\n');
                     }
                     collected.push_str(&line);
                     line_count += 1;
+
+                    // After first output, switch to the shorter stall timeout
+                    current_timeout = LINE_STALL;
 
                     // Emit progress every 5 lines so the UI can update
                     if line_count % 5 == 0 {
@@ -425,9 +431,16 @@ RULES:
                     return Err(format!("Failed to read claude output: {}", e));
                 }
                 Err(_) => {
-                    // Timeout reached while waiting for next line
+                    // No output for too long — Claude has stalled
                     let _ = child.kill().await;
-                    return Err("Claude timed out after 5 minutes".to_string());
+                    if line_count == 0 {
+                        return Err("Claude produced no output after 3 minutes".to_string());
+                    } else {
+                        return Err(format!(
+                            "Claude stalled after {} lines (no output for 90s)",
+                            line_count
+                        ));
+                    }
                 }
             }
         }

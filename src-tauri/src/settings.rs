@@ -13,6 +13,8 @@ pub struct AppSettings {
     pub system_prompt: String,
     #[serde(default = "default_splitter")]
     pub splitter_position: f64,
+    #[serde(default = "default_desktop_color")]
+    pub desktop_color: String,
 }
 
 fn default_font_size() -> u8 {
@@ -23,6 +25,10 @@ fn default_splitter() -> f64 {
     0.4
 }
 
+fn default_desktop_color() -> String {
+    "#008080".to_string()
+}
+
 impl Default for AppSettings {
     fn default() -> Self {
         AppSettings {
@@ -31,6 +37,7 @@ impl Default for AppSettings {
             font_size: 13,
             system_prompt: String::new(),
             splitter_position: 0.4,
+            desktop_color: "#008080".to_string(),
         }
     }
 }

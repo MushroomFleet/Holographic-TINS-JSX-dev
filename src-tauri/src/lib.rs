@@ -1,3 +1,4 @@
+mod apptray;
 mod bridge;
 mod claude;
 mod conversations;
@@ -28,6 +29,11 @@ pub fn run() {
             bridge::update_bridge_config,
             settings::get_settings,
             settings::save_settings,
+            apptray::list_promoted_apps,
+            apptray::promote_app,
+            apptray::demote_app,
+            apptray::is_app_promoted,
+            apptray::read_thumbnail_base64,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
