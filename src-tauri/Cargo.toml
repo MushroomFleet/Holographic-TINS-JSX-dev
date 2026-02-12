@@ -1,0 +1,25 @@
+[package]
+name = "holographic-tins"
+version = "0.5.0"
+description = "Holographic JSX Playground - A live application factory powered by Claude Code"
+authors = ["you"]
+edition = "2021"
+
+[lib]
+name = "holographic_tins_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["process", "io-util", "macros", "rt-multi-thread", "fs"] }
+dirs = "5"
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+tauri-plugin-dialog = "2.6.0"
+base64 = "0.22"
+tauri-plugin-updater = "2.10.0"
