@@ -13,19 +13,28 @@ The name references the **TINS (There Is No Source)** software distribution para
 ### Core Chat Interface
 - **Streaming responses** from Claude Code CLI with real-time token display
 - **Conversation persistence** with auto-save to `~/.holographic/conversations/`
-- **Conversation library** with search, favorites, tags, and thumbnail previews
+- **Conversation library** with search, favorites, and inline tag editing
 - **In-chat search** (Ctrl+F) with match highlighting and navigation
 - **Session resumption** via Claude's `--resume` flag for multi-turn context
 - **Custom system prompt** override in settings
 - **Editable conversation titles** with inline rename
 
 ### Live HTML Renderer
-- **Sandboxed iframe** (`sandbox="allow-scripts"`) for secure execution
-- **Auto-detection** of HTML code blocks from Claude's responses
-- **Hot-reload** on every new response using content hashing (djb2)
+- **Sandboxed iframe** (`sandbox="allow-scripts allow-same-origin"`) for secure execution
+- **Auto-detection** of HTML file paths from Claude's responses
+- **Hot-reload** during streaming via workspace polling with content hashing (djb2)
 - **Status badges** showing idle / transpiling / rendered / error states
 - **Error auto-feedback loop** -- render errors are automatically sent back to Claude for self-correction
+- **Thumbnail capture** via html2canvas on successful render (saved as PNG)
 - **Copy file path** button for quick access to generated HTML files
+
+### App Tray (Desktop)
+- **Promote apps** from conversations to a mock holographic desktop
+- **Desktop icon grid** with thumbnail previews and app name labels
+- **Click to launch** -- opens the conversation and renders its HTML
+- **Right-click context menu** with Launch and Remove options
+- **Configurable background color** with 6 presets (default: Windows 3.1 teal `#008080`)
+- **Keyboard toggle** with Ctrl+T
 
 ### Compute Bridge
 - **Shell command relay** from iframe to Rust backend via `postMessage`
@@ -53,6 +62,7 @@ The name references the **TINS (There Is No Source)** software distribution para
 | Focus chat | `Ctrl+1` |
 | Focus renderer | `Ctrl+2` |
 | Toggle library | `Ctrl+L` |
+| Toggle App Tray | `Ctrl+T` |
 | Export HTML | `Ctrl+E` |
 | Search messages | `Ctrl+F` |
 | Increase font | `Ctrl+=` |
@@ -74,11 +84,12 @@ The name references the **TINS (There Is No Source)** software distribution para
 +--------v--------------------------v----------+
 |              Rust Backend (Tauri 2.x)         |
 |                                               |
-|  claude.rs      - Claude CLI subprocess       |
+|  claude.rs        - Claude CLI subprocess     |
 |  conversations.rs - JSON persistence          |
-|  settings.rs    - App configuration           |
-|  bridge.rs      - Compute bridge relay        |
-|  export.rs      - File export handlers        |
+|  settings.rs      - App configuration         |
+|  apptray.rs       - Promoted apps CRUD        |
+|  bridge.rs        - Compute bridge relay      |
+|  export.rs        - File export + thumbnails  |
 +-----------------------------------------------+
          |
          |  tokio::process::Command
@@ -88,6 +99,8 @@ The name references the **TINS (There Is No Source)** software distribution para
 |  (claude --print) |
 +-------------------+
 ```
+
+The left pane supports four views: **Chat**, **Library**, **App Tray**, and **Settings**. The right pane is always the live renderer. A draggable splitter controls the pane ratio.
 
 ---
 
@@ -140,9 +153,10 @@ Build artifacts are output to `src-tauri/target/release/bundle/`.
 ```
 Holographic-TINS/
 ├── src/                          # Frontend (React + TypeScript)
-│   ├── App.tsx                   # Main layout with split panes
+│   ├── App.tsx                   # Main layout with split panes + view routing
 │   ├── main.tsx                  # React entry point
 │   ├── components/
+│   │   ├── AppTrayView.tsx       # Promoted apps desktop grid
 │   │   ├── ChatPane.tsx          # Chat interface container
 │   │   ├── ChatMessage.tsx       # Message bubble (React.memo)
 │   │   ├── ChatInput.tsx         # Auto-growing textarea input
@@ -156,26 +170,28 @@ Holographic-TINS/
 │   │   ├── SettingsPanel.tsx     # App settings UI
 │   │   └── Toast.tsx             # Toast notification system
 │   ├── hooks/
-│   │   ├── useClaudeChat.ts      # Claude CLI integration
-│   │   ├── useExport.ts          # Export handlers (HTML/JSON/TINS)
-│   │   ├── useKeyboardShortcuts.ts
-│   │   ├── useRendererBridge.ts  # iframe-to-Rust relay
-│   │   ├── useTheme.ts           # Settings persistence
+│   │   ├── useClaudeChat.ts      # Claude CLI integration + conversation state
+│   │   ├── useAppTray.ts         # Promoted apps state management
+│   │   ├── useExport.ts          # Export handlers (HTML/JSON/TINS/Log)
+│   │   ├── useKeyboardShortcuts.ts # Global keyboard shortcut bindings
+│   │   ├── useRendererBridge.ts  # iframe-to-Rust postMessage relay
+│   │   ├── useTheme.ts           # Theme + settings persistence
 │   │   ├── useToast.ts           # Toast state management
 │   │   └── useUpdater.ts         # Auto-update check
 │   ├── lib/
-│   │   └── types.ts              # Shared TypeScript types
+│   │   └── types.ts              # Shared TypeScript interfaces
 │   └── styles/
-│       └── index.css             # Tailwind v4 + CSS variables
+│       └── index.css             # Tailwind v4 theme + CSS variables
 ├── src-tauri/                    # Backend (Rust)
 │   ├── Cargo.toml
 │   ├── tauri.conf.json           # Tauri configuration
 │   └── src/
 │       ├── main.rs               # Tauri entry point
-│       ├── lib.rs                # Command registration
+│       ├── lib.rs                # Module declarations + command registration
 │       ├── claude.rs             # Claude CLI subprocess management
 │       ├── conversations.rs      # Conversation CRUD + persistence
 │       ├── settings.rs           # App settings (JSON)
+│       ├── apptray.rs            # Promoted apps CRUD + thumbnail reader
 │       ├── bridge.rs             # Compute bridge (shell relay)
 │       └── export.rs             # File export + thumbnail save
 ├── package.json
@@ -192,15 +208,29 @@ All application data is stored under `~/.holographic/`:
 
 ```
 ~/.holographic/
-├── settings.json                 # Accent color, font size, system prompt, etc.
+├── settings.json                 # Accent color, font size, desktop color, etc.
+├── apptray.json                  # Promoted apps registry (separate from settings)
 ├── conversations/
 │   └── {uuid}.json               # Individual conversation files
 ├── thumbnails/
-│   └── {uuid}.png                # Renderer preview screenshots
+│   └── {uuid}.png                # Renderer preview screenshots (html2canvas)
 ├── bridge_config.json            # Compute bridge allowlists
 └── workspace/                    # Claude Code working directory
     └── *.html                    # Generated HTML files
 ```
+
+---
+
+## App Tray
+
+The **App Tray** is a mock desktop interface for quick-launching apps you've built. When you create an application through a conversation, click the **Promote** button in the chat header to add it as a desktop icon.
+
+- Icons display a thumbnail screenshot and the HTML filename as a label
+- Left-click an icon to load the conversation and render the app
+- Right-click for a context menu with Launch and Remove options
+- The desktop background color defaults to Windows 3.1 teal (`#008080`) and can be customized in Settings
+- Promoted apps are stored independently in `~/.holographic/apptray.json`
+- Thumbnails are loaded as base64 via a Rust command (avoids asset protocol scope issues)
 
 ---
 
@@ -219,6 +249,7 @@ Settings are accessible via the gear icon or by navigating to the Settings panel
 | Setting | Default | Description |
 |---|---|---|
 | Accent Color | `#00d4ff` | UI accent for buttons, links, highlights |
+| App Tray Background | `#008080` | Desktop background color (6 presets + custom) |
 | High Contrast | Off | WCAG-friendly high-contrast overrides |
 | Font Size | 13px | Chat message font size (10-20px range) |
 | System Prompt | Empty | Custom instructions prepended to Claude |

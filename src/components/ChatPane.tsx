@@ -25,6 +25,10 @@ interface ChatPaneProps {
   isExporting?: boolean;
   showSearch?: boolean;
   onToggleSearch?: () => void;
+  conversationId?: string;
+  isPromoted?: boolean;
+  onTogglePromote?: () => void;
+  onShowAppTray?: () => void;
 }
 
 /** Renders the streaming response as live markdown */
@@ -126,6 +130,10 @@ export function ChatPane({
   isExporting,
   showSearch,
   onToggleSearch,
+  conversationId,
+  isPromoted,
+  onTogglePromote,
+  onShowAppTray,
 }: ChatPaneProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [highlightedMsg, setHighlightedMsg] = useState<number | null>(null);
@@ -203,6 +211,28 @@ export function ChatPane({
               title="Export build provenance log"
             >
               Log
+            </button>
+          )}
+          {onTogglePromote && conversationId && messages.length > 0 && (
+            <button
+              onClick={onTogglePromote}
+              className={`text-[10px] transition-colors ${
+                isPromoted
+                  ? "text-accent font-medium"
+                  : "text-text-secondary hover:text-accent"
+              }`}
+              title={isPromoted ? "Remove from App Tray" : "Promote to App Tray"}
+            >
+              {isPromoted ? "Promoted" : "Promote"}
+            </button>
+          )}
+          {onShowAppTray && (
+            <button
+              onClick={onShowAppTray}
+              className="text-text-secondary hover:text-accent text-xs transition-colors"
+              title="Open App Tray (Ctrl+T)"
+            >
+              AppTray
             </button>
           )}
           <button

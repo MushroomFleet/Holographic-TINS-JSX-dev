@@ -7,6 +7,7 @@ interface AppSettings {
   font_size: number;
   system_prompt: string;
   splitter_position: number;
+  desktop_color: string;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -15,6 +16,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   font_size: 13,
   system_prompt: "",
   splitter_position: 0.4,
+  desktop_color: "#008080",
 };
 
 /** High-contrast overrides applied via CSS custom properties */
@@ -64,6 +66,7 @@ export function useTheme() {
   const [fontSize, setFontSize] = useState(DEFAULT_SETTINGS.font_size);
   const [systemPrompt, setSystemPrompt] = useState(DEFAULT_SETTINGS.system_prompt);
   const [splitterPosition, setSplitterPosition] = useState(DEFAULT_SETTINGS.splitter_position);
+  const [desktopColor, setDesktopColor] = useState(DEFAULT_SETTINGS.desktop_color);
 
   // Load saved settings on mount
   useEffect(() => {
@@ -90,6 +93,9 @@ export function useTheme() {
         if (settings.splitter_position) {
           setSplitterPosition(settings.splitter_position);
         }
+        if (settings.desktop_color) {
+          setDesktopColor(settings.desktop_color);
+        }
       })
       .catch(console.error);
   }, []);
@@ -104,13 +110,14 @@ export function useTheme() {
             font_size: updates.font_size ?? fontSize,
             system_prompt: updates.system_prompt ?? systemPrompt,
             splitter_position: updates.splitter_position ?? splitterPosition,
+            desktop_color: updates.desktop_color ?? desktopColor,
           },
         });
       } catch (err) {
         console.error("Failed to save settings:", err);
       }
     },
-    [accentColor, highContrast, fontSize, systemPrompt, splitterPosition],
+    [accentColor, highContrast, fontSize, systemPrompt, splitterPosition, desktopColor],
   );
 
   const updateAccentColor = useCallback(
@@ -165,6 +172,14 @@ export function useTheme() {
     [saveSettings],
   );
 
+  const updateDesktopColor = useCallback(
+    async (color: string) => {
+      setDesktopColor(color);
+      await saveSettings({ desktop_color: color });
+    },
+    [saveSettings],
+  );
+
   return {
     accentColor,
     updateAccentColor,
@@ -177,5 +192,7 @@ export function useTheme() {
     updateSystemPrompt,
     splitterPosition,
     updateSplitterPosition,
+    desktopColor,
+    updateDesktopColor,
   };
 }

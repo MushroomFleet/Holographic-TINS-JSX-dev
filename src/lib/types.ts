@@ -23,6 +23,15 @@ export interface Conversation {
   thumbnail_path: string | null;
 }
 
+/** An app promoted to the APPTRAY desktop */
+export interface PromotedApp {
+  conversation_id: string;
+  name: string;
+  thumbnail_path: string | null;
+  html_path: string;
+  promoted_at: string;
+}
+
 /** Lightweight summary for library listing */
 export interface ConversationSummary {
   id: string;

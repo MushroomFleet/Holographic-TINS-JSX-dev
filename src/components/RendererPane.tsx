@@ -23,6 +23,8 @@ interface RendererPaneProps {
   onErrorFeedback?: (message: string) => void;
   /** Current conversation ID for thumbnail saving */
   conversationId?: string;
+  /** Notify parent when the rendered file changes */
+  onFileChange?: (filePath: string | null) => void;
 }
 
 /**
@@ -120,6 +122,7 @@ export function RendererPane({
   lastResponseText,
   onErrorFeedback,
   conversationId,
+  onFileChange,
 }: RendererPaneProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [status, setStatus] = useState<RendererStatus>("idle");
@@ -129,6 +132,8 @@ export function RendererPane({
   const prevFileRef = useRef<string | null>(null);
   const prevModTimeRef = useRef<number>(0);
   const errorFeedbackSentRef = useRef<string | null>(null);
+  const onFileChangeRef = useRef(onFileChange);
+  onFileChangeRef.current = onFileChange;
 
   const loadHtmlFile = useCallback(
     async (filePath: string, force = false) => {
@@ -142,6 +147,7 @@ export function RendererPane({
         setCurrentFile(filePath);
         setHtmlContent(injectErrorCatcher(content));
         setStatus("rendered");
+        onFileChangeRef.current?.(filePath);
         return true;
       } catch (err) {
         console.error("Failed to load HTML file:", filePath, err);

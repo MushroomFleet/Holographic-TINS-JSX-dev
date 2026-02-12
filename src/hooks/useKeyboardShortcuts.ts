@@ -9,6 +9,7 @@ interface KeyboardShortcutActions {
   onIncreaseFontSize?: () => void;
   onDecreaseFontSize?: () => void;
   onToggleChatSearch?: () => void;
+  onToggleAppTray?: () => void;
 }
 
 /**
@@ -21,6 +22,7 @@ interface KeyboardShortcutActions {
  * - Ctrl+F: Search within chat
  * - Ctrl+=: Increase font size
  * - Ctrl+-: Decrease font size
+ * - Ctrl+T: Toggle App Tray view
  * - Escape: Blur current focus / close modals
  */
 export function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
@@ -52,6 +54,9 @@ export function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
       } else if (isCtrl && e.key === "-" && actions.onDecreaseFontSize) {
         e.preventDefault();
         actions.onDecreaseFontSize();
+      } else if (isCtrl && e.key === "t" && actions.onToggleAppTray) {
+        e.preventDefault();
+        actions.onToggleAppTray();
       } else if (e.key === "Escape") {
         // Blur active element
         if (document.activeElement instanceof HTMLElement) {

@@ -9,6 +9,8 @@ interface SettingsPanelProps {
   systemPrompt: string;
   onSystemPromptChange: (prompt: string) => void;
   onClose: () => void;
+  desktopColor: string;
+  onDesktopColorChange: (color: string) => void;
 }
 
 const PRESET_COLORS = [
@@ -41,6 +43,8 @@ export function SettingsPanel({
   systemPrompt,
   onSystemPromptChange,
   onClose,
+  desktopColor,
+  onDesktopColorChange,
 }: SettingsPanelProps) {
   return (
     <div className="flex flex-col h-full bg-bg-primary">
@@ -94,6 +98,55 @@ export function SettingsPanel({
               }}
               className="bg-bg-tertiary text-text-primary rounded px-2 py-1 text-xs font-mono w-24 outline-none focus:ring-1 focus:ring-accent"
               placeholder="#00d4ff"
+            />
+          </div>
+        </div>
+
+        {/* App Tray background color */}
+        <div>
+          <label className="text-xs font-medium text-text-primary block mb-2">
+            App Tray Background
+          </label>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {[
+              { name: "Win 3.1 Teal", value: "#008080" },
+              { name: "Deep Navy", value: "#000080" },
+              { name: "Forest Green", value: "#006400" },
+              { name: "Charcoal", value: "#1a1a2e" },
+              { name: "Midnight Purple", value: "#1a0033" },
+              { name: "Slate", value: "#2f4f4f" },
+            ].map((preset) => (
+              <button
+                key={preset.value}
+                onClick={() => onDesktopColorChange(preset.value)}
+                className={`w-7 h-7 rounded-full border-2 transition-all ${
+                  desktopColor === preset.value
+                    ? "border-white scale-110"
+                    : "border-transparent hover:scale-105"
+                }`}
+                style={{ backgroundColor: preset.value }}
+                title={preset.name}
+              />
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={desktopColor}
+              onChange={(e) => onDesktopColorChange(e.target.value)}
+              className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent"
+            />
+            <input
+              type="text"
+              value={desktopColor}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) {
+                  onDesktopColorChange(expandHex(v));
+                }
+              }}
+              className="bg-bg-tertiary text-text-primary rounded px-2 py-1 text-xs font-mono w-24 outline-none focus:ring-1 focus:ring-accent"
+              placeholder="#008080"
             />
           </div>
         </div>
@@ -221,6 +274,12 @@ export function SettingsPanel({
               <span>Decrease font size</span>
               <kbd className="bg-bg-tertiary px-1.5 py-0.5 rounded text-[10px]">
                 Ctrl+-
+              </kbd>
+            </div>
+            <div className="flex justify-between">
+              <span>Toggle App Tray</span>
+              <kbd className="bg-bg-tertiary px-1.5 py-0.5 rounded text-[10px]">
+                Ctrl+T
               </kbd>
             </div>
           </div>

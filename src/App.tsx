@@ -11,8 +11,11 @@ import { useExport } from "./hooks/useExport";
 import { useRendererBridge } from "./hooks/useRendererBridge";
 import { useTheme } from "./hooks/useTheme";
 import { useToast } from "./hooks/useToast";
+import { useAppTray } from "./hooks/useAppTray";
+import { AppTrayView } from "./components/AppTrayView";
+import type { PromotedApp } from "./lib/types";
 
-type View = "chat" | "library" | "settings";
+type View = "chat" | "library" | "settings" | "apptray";
 
 function App() {
   const [view, setView] = useState<View>("chat");
@@ -70,7 +73,33 @@ function App() {
     updateSystemPrompt,
     splitterPosition,
     updateSplitterPosition,
+    desktopColor,
+    updateDesktopColor,
   } = useTheme();
+
+  // App Tray: promoted apps management
+  const {
+    promotedApps,
+    loading: appTrayLoading,
+    refresh: refreshAppTray,
+    promoteApp,
+    demoteApp,
+    isPromoted,
+  } = useAppTray();
+
+  // Track whether the current conversation is promoted
+  const [currentIsPromoted, setCurrentIsPromoted] = useState(false);
+
+  // Track the currently rendered HTML file path (reported by RendererPane)
+  const [currentRenderedFile, setCurrentRenderedFile] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (conversationId) {
+      isPromoted(conversationId)
+        .then(setCurrentIsPromoted)
+        .catch(() => setCurrentIsPromoted(false));
+    }
+  }, [conversationId, isPromoted]);
 
   // Splitter state: initialize from persisted settings
   const [splitPercent, setSplitPercent] = useState(40);
@@ -120,6 +149,46 @@ function App() {
     setShowSearch((s) => !s);
   }, []);
 
+  // Promote / demote the current conversation's app
+  const handleTogglePromote = useCallback(async () => {
+    if (!conversationId) return;
+
+    if (currentIsPromoted) {
+      await demoteApp(conversationId);
+      setCurrentIsPromoted(false);
+    } else {
+      if (!currentRenderedFile) {
+        addToast("error", "No rendered app to promote");
+        return;
+      }
+
+      const thumbPath = `${workspacePath.replace(/[/\\]workspace\/?$/, "/thumbnails")}/${conversationId}.png`;
+
+      // Use the HTML filename (without extension) as the icon label
+      const fileName = currentRenderedFile.split(/[/\\]/).pop() ?? "";
+      const appName = fileName.replace(/\.html?$/i, "").replace(/[-_]/g, " ") || conversationTitle;
+
+      await promoteApp({
+        conversation_id: conversationId,
+        name: appName,
+        thumbnail_path: thumbPath,
+        html_path: currentRenderedFile,
+        promoted_at: new Date().toISOString(),
+      });
+      setCurrentIsPromoted(true);
+      addToast("success", `"${appName}" promoted to App Tray`);
+    }
+  }, [conversationId, currentIsPromoted, conversationTitle, workspacePath, currentRenderedFile, demoteApp, promoteApp, addToast]);
+
+  // Launch an app from the App Tray
+  const handleLaunchApp = useCallback(
+    async (app: PromotedApp) => {
+      await loadConversation(app.conversation_id);
+      setView("chat");
+    },
+    [loadConversation],
+  );
+
   // Keyboard shortcuts
   useKeyboardShortcuts({
     onNewConversation: handleNewConversation,
@@ -140,6 +209,13 @@ function App() {
     onIncreaseFontSize: increaseFontSize,
     onDecreaseFontSize: decreaseFontSize,
     onToggleChatSearch: handleToggleSearch,
+    onToggleAppTray: () => {
+      setView((v) => {
+        if (v === "apptray") return "chat";
+        refreshAppTray();
+        return "apptray";
+      });
+    },
   });
 
   return (
@@ -170,6 +246,13 @@ function App() {
               isExporting={isExporting}
               showSearch={showSearch}
               onToggleSearch={handleToggleSearch}
+              conversationId={conversationId}
+              isPromoted={currentIsPromoted}
+              onTogglePromote={handleTogglePromote}
+              onShowAppTray={() => {
+                setView("apptray");
+                refreshAppTray();
+              }}
             />
           ) : view === "library" ? (
             <LibraryView
@@ -179,6 +262,18 @@ function App() {
               onToggleFavorite={toggleFavorite}
               onUpdateTags={updateTags}
               listConversations={listConversations}
+            />
+          ) : view === "apptray" ? (
+            <AppTrayView
+              promotedApps={promotedApps}
+              loading={appTrayLoading}
+              desktopColor={desktopColor}
+              onLaunchApp={handleLaunchApp}
+              onDemoteApp={async (id) => {
+                await demoteApp(id);
+                await refreshAppTray();
+              }}
+              onClose={() => setView("chat")}
             />
           ) : (
             <SettingsPanel
@@ -192,6 +287,8 @@ function App() {
               systemPrompt={systemPrompt}
               onSystemPromptChange={updateSystemPrompt}
               onClose={() => setView("chat")}
+              desktopColor={desktopColor}
+              onDesktopColorChange={updateDesktopColor}
             />
           )}
         </div>
@@ -215,6 +312,7 @@ function App() {
             lastResponseText={lastResponseText}
             onErrorFeedback={sendMessage}
             conversationId={conversationId}
+            onFileChange={setCurrentRenderedFile}
           />
         </div>
       )}
