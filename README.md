@@ -2,6 +2,8 @@
 
 > A live application factory powered by Claude Code CLI
 
+I have open sourced this project, [you can find the prototype release installers here](https://github.com/MushroomFleet/Holographic-TINS-JSX)
+
 **Holographic TINS** is a Tauri 2.x desktop application that pairs a conversational AI chat interface with a live HTML renderer. Describe what you want in natural language on the left, and watch it materialize as a working application on the right -- in real time.
 
 The name references the **TINS (There Is No Source)** software distribution paradigm: applications are defined by their specification rather than traditional source code. Holographic TINS generates, renders, and exports complete single-file HTML applications from conversational prompts.
@@ -284,3 +286,4 @@ If you use Holographic TINS in your research or projects, please cite:
 If you find this project useful, consider supporting development:
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/driftjohnson)
+
